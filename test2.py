@@ -48,21 +48,25 @@ def create_beta_dict(tagged_letters, vocab, tags):
     for tag in tags:
         beta_dict[tag] = {}
         for key in vocab:
-            beta_dict[tag][key] = 0
+            beta_dict[tag][key] = 1
     for i in range(len(tagged_letters)):
         for j in range(len(tagged_letters[i])):
                     beta_dict[tagged_letters[i][j][1]][tagged_letters[i][j][0]] += 1
 
     return beta_dict
 
-def create_beta_frequency_dict(beta_dict):
+def create_beta_frequency_dict(beta_dict,vocab,tags):
+    count = {}
+    for tag in tags:
+        count[tag] = 0
+        for letter in vocab:
+            count[tag] += beta_dict[tag][letter]
+    print(count)
+                    
     beta_frequency_dict = copy.deepcopy(beta_dict)
     for key in beta_frequency_dict.keys():
-        count = 0
         for key2 in beta_frequency_dict[key].keys():
-            count += beta_frequency_dict[key][key2]
-        for key3 in beta_frequency_dict[key].keys():
-            beta_frequency_dict[key][key3] = beta_frequency_dict[key][key3] / count
+            beta_frequency_dict[key][key2] = beta_frequency_dict[key][key2] / count[key]
 
     return beta_frequency_dict
 
@@ -71,8 +75,8 @@ def create_alpha_dict(labels, tags):
     for tag in tags:
         alpha_dict[tag] = {}
         for key in tags:
-            alpha_dict[tag][key] = 0
-            alpha_dict[tag]['.'] = 0
+            alpha_dict[tag][key] = 1
+            alpha_dict[tag]['.'] = 1
 
     for i in range(len(labels)):
         for j in range(len(labels[i])-1):
@@ -83,14 +87,17 @@ def create_alpha_dict(labels, tags):
 
     return alpha_dict
 
-def create_alpha_frequency_dict(bigram_dict):
+def create_alpha_frequency_dict(bigram_dict, tags,vocab):
+    count = {}
+    for tag in tags:
+        count[tag] = 0
+        for tag2 in tags:
+            count[tag] += bigram_dict[tag][tag2]
+    print(count)
     bigram_frequency_dict = copy.deepcopy(bigram_dict)
     for key in bigram_frequency_dict.keys():
-        count = 0
         for key2 in bigram_frequency_dict[key].keys():
-            count += bigram_frequency_dict[key][key2]
-        for key3 in bigram_frequency_dict[key].keys():
-            bigram_frequency_dict[key][key3] = bigram_frequency_dict[key][key3] / count
+            bigram_frequency_dict[key][key2] = bigram_frequency_dict[key][key2] / count[key]
 
     return bigram_frequency_dict
 
@@ -108,9 +115,9 @@ def get_sets(list1, list2):
 
 def create_pi_dict(labels,tags):
     freq_dict = {}
-    words_count = 0
+    words_count = 2
     for tag in tags:
-        freq_dict[tag] = 0
+        freq_dict[tag] = 1
 
     for i in range(len(labels)):
         words_count += 1
@@ -270,11 +277,11 @@ if __name__ == "__main__":
 
     alpha_dict = create_alpha_dict(tagged_training_letters,tagsset)
 
-    alpha_frequency_dict = create_alpha_frequency_dict(alpha_dict)
+    alpha_frequency_dict = create_alpha_frequency_dict(alpha_dict,vocab,tags)
 
     beta_dict = create_beta_dict(tagged_training_letters, vocab, tags)
 
-    beta_frequency_dict = create_beta_frequency_dict(beta_dict)
+    beta_frequency_dict = create_beta_frequency_dict(beta_dict,vocab,tags)
 
     pi_freq_dict = create_pi_dict(tagged_training_letters,tags)
     
@@ -283,7 +290,7 @@ if __name__ == "__main__":
     mm = example()
     
     for line in mm:
-        print(*line)
+        print(line)
     
     
 
