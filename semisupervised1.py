@@ -180,13 +180,13 @@ def new_p(letters, em, trans, Alpha_B, Alpha_I, Beta_B, Beta_I, addition):
             P_new_IB.append((Alpha_I[i - 1]*trans['I']['B']*Beta_B[i]*em['B'][letters[i]]) / addition[i])
             P_new_BI.append((Alpha_B[i - 1]*trans['B']['I']*Beta_I[i]*em['I'][letters[i]]) / addition[i])
             P_new_II.append((Alpha_I[i - 1]*trans['I']['I']*Beta_I[i]*em['I'][letters[i]]) / addition[i])
-    sum_P_new_BB, sum_P_new_IB, sum_P_new_BI, sum_P_new_II = sum(P_new_BB), sum(P_new_IB), sum(P_new_BI), sum(P_new_II)
-    return sum_P_new_BB, sum_P_new_IB, sum_P_new_BI, sum_P_new_II
+    # sum_P_new_BB, sum_P_new_IB, sum_P_new_BI, sum_P_new_II = sum(P_new_BB), sum(P_new_IB), sum(P_new_BI), sum(P_new_II)
+    return P_new_BB, P_new_IB, P_new_BI, P_new_II
 
 def generate_new_probs(P_B, P_I, sum_B, sum_I, sum_dictB, sum_dictI, P_new_BB, P_new_IB, P_new_BI, P_new_II, vocab):
     #update probabilities
-    start = {'B': P_B[0], 'I':P_I[0]}
-    trans = {'B': {'B':P_new_BB/sum_B, 'I':P_new_BI/sum_B, '.': P_B[-1]/sum_B}, 'I': {'B':P_new_IB/sum_I,'I':P_new_II/sum_I,'.':P_I[-1]/sum_I}}
+    start = {'B': P_B[0][0], 'I':P_I[0][0]}
+    trans = {'B': {'B':P_new_BB/sum_B, 'I':P_new_BI/sum_B, '.': P_B[0][-1]/sum_B}, 'I': {'B':P_new_IB/sum_I,'I':P_new_II/sum_I,'.':P_I[-1][0]/sum_I}}
     em = {'B': {}, 'I': {}}
     for letter in vocab:
         em['I'][letter] = sum_dictI[letter]/sum_I
@@ -200,32 +200,57 @@ def fwd_bck(words_list, em, trans, start, vocab):
         sum_dictB[key] = 0
         sum_dictI[key] = 0
 
-    sum_B = []
-    sum_I = []
+    P_B = []
+    P_I = []
+    P_new_BB = []
+    P_new_IB = [] 
+    P_new_BI = []
+    P_new_II = []
+    # Alpha_B_list = []
+    # Alpha_I_list = []
+    # Beta_B_list = []
+    # Beta_I_list = []
+    # BB_list = []
+    # II_list = []
+    # addition_list = []
     for word in words_list:
         Alpha_B, Alpha_I = alpha(word, em, trans, start)
         Beta_B, Beta_I = beta(word, em, trans, start)
         BB = [a*b for a,b in zip(Alpha_B,Beta_B)]
         II = [a*b for a,b in zip(Alpha_I,Beta_I)]
         addition = [sum(x) for x in zip(BB, II)]
-        P_B = [a/b for a,b in zip(BB,addition)]
-        P_I = [a/b for a,b in zip(II,addition)]
-        P_new_BB, P_new_IB, P_new_BI, P_new_II = new_p(word, em, trans, Alpha_B, Alpha_I, Beta_B, Beta_I, addition)
-
-        sum_B.append(sum(P_B))
-        sum_I.append(sum(P_I))
-        print(P_B)
-        print(P_I)
+        current_PB = [a/b for a,b in zip(BB,addition)]
+        current_PI = [a/b for a,b in zip(II,addition)]
+        
+        P_BB, P_IB, P_BI, P_II = new_p(word, em, trans, Alpha_B, Alpha_I, Beta_B, Beta_I, addition)
+        P_new_BB.append(P_BB)
+        P_new_IB.append(P_IB)
+        P_new_BI.append(P_BI)
+        P_new_II.append(P_II)
+        P_B.append(current_PB)
+        P_I.append(current_PI)
+        print(P_new_BB)
+        # Alpha_B_list.append(Alpha_B)
+        # Alpha_I_list.append(Alpha_I)
+        # Beta_B_list.append(Beta_B)
+        # Beta_I_list.append(Beta_I)
+        # BB_list.append(BB)
+        # II_list.append(II)
+        # addition_list.append(addition)
 
         for i in range(len(word)):
-            sum_dictB[word[i]] += P_B[i]
-            sum_dictI[word[i]] += P_I[i]
-        print(sum_dictB)
+            sum_dictB[word[i]] += current_PB[i]
+            sum_dictI[word[i]] += current_PI[i]
+            
+    sum_B = sum([sum(x) for x in P_B])
+    sum_I = sum([sum(x) for x in P_I])
+    P_new_BB_sum = sum([sum(x) for x in P_new_BB])
+    P_new_IB_sum = sum([sum(x) for x in P_new_IB])
+    P_new_BI_sum = sum([sum(x) for x in P_new_BI])
+    P_new_II_sum = sum([sum(x) for x in P_new_II])    
+    # P_new_BB, P_new_IB, P_new_BI, P_new_II = new_p(word, em, trans, Alpha_B, Alpha_I, Beta_B, Beta_I, addition)
 
-    sum_B = sum(sum_B)
-    sum_I = sum(sum_I)
-
-    new_start, new_em, new_trans = generate_new_probs(P_B, P_I, sum_B, sum_I, sum_dictB, sum_dictI, P_new_BB, P_new_IB, P_new_BI, P_new_II,vocab)
+    new_start, new_em, new_trans = generate_new_probs(P_B, P_I, sum_B, sum_I, sum_dictB, sum_dictI, P_new_BB_sum, P_new_IB_sum, P_new_BI_sum, P_new_II_sum,vocab)
 
     return new_start, new_em, new_trans
 
@@ -260,6 +285,12 @@ if __name__ == "__main__":
     x_train_list = []
     for word in x_train:
         x_train_list.append(list(word))
+        
+    # x_train_list = [[2,3,3,2,3,2,3,2,2,3,1,3,3,1,1,1,2,1,1,1,3,1,2,1,1,1,2,3,3,2,3,2,2]]
+    # start_freq_dict = {'B': 0.5, 'I':0.5}
+    # emmision_frequency_dict = {'B': {1:0.7, 2:0.2, 3: 0.1}, 'I': {1:0.1,2:0.2,3:0.7}}
+    # transition_frequency_dict = {'B': {'B':0.8, 'I':0.1, '.': 0.1}, 'I': {'B':0.1,'I':0.8,'.':0.1}}
+    # vocab = [1,2,3]
 
     for i in range(1):
         start_freq_dict, emmision_frequency_dict, transition_frequency_dict = fwd_bck(x_train_list, emmision_frequency_dict, transition_frequency_dict, start_freq_dict, vocab)
