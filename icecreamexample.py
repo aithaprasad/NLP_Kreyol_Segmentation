@@ -67,28 +67,35 @@ def generate_new_probs(P_B, P_I, sum_B, sum_I, sum_dictB, sum_dictI, P_new_BB, P
     return start, em, trans
 
 def fwd_bck(words_list, em, trans, start, vocab):
+    # implement forward backwards algorithm
     sum_dictB = {}
     sum_dictI = {}
     for key in vocab:
         sum_dictB[key] = 0
         sum_dictI[key] = 0
 
+    # get alpha list (going forward)
     Alpha_B, Alpha_I = alpha(words_list, em, trans, start)
+    # get beta list (going backwards)
     Beta_B, Beta_I = beta(words_list, em, trans, start)
-    BB = [a*b for a,b in zip(Alpha_B,Beta_B)]
-    II = [a*b for a,b in zip(Alpha_I,Beta_I)]
-    addition = [sum(x) for x in zip(BB, II)]
-    P_B = [a/b for a,b in zip(BB,addition)]
-    P_I = [a/b for a,b in zip(II,addition)]
+    BB = [a*b for a,b in zip(Alpha_B,Beta_B)] #alpha(B) * beta(B)
+    II = [a*b for a,b in zip(Alpha_I,Beta_I)] #alpha(I) * beta(I)
+    addition = [sum(x) for x in zip(BB, II)] # BB + II
+    P_B = [a/b for a,b in zip(BB,addition)] #P(->B)
+    P_I = [a/b for a,b in zip(II,addition)] #P(->I)
+
+    # get new P(B|B) P(B|I) P(I|B) P(I|I)
     P_new_BB, P_new_IB, P_new_BI, P_new_II = new_p(words_list, em, trans, Alpha_B, Alpha_I, Beta_B, Beta_I, addition)
 
     sum_B = sum(P_B)
     sum_I = sum(P_I)
 
+    # get P(->B,I|each letter)
     for i in range(len(words_list)):
         sum_dictB[words_list[i]] += P_B[i]
         sum_dictI[words_list[i]] += P_I[i]
 
+    # get new emmission, transition, and start matrices
     new_start, new_em, new_trans = generate_new_probs(P_B, P_I, sum_B, sum_I, sum_dictB, sum_dictI, P_new_BB, P_new_IB, P_new_BI, P_new_II,vocab)
 
     return new_start, new_em, new_trans
